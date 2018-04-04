@@ -1,0 +1,1516 @@
+---
+title: "Dados de Empréstimos da Prosper - Análise Exploratória de Dados (EDA)"
+author: "Marcio Ozorio de Jesus"
+output: html_document
+---
+E-mail: <a href="mailto:marcio.ozorio@gmail.com">marcio.ozorio@gmail.com</a><br/>
+LinkedIn: <a href="https://www.linkedin.com/in/marciojesus/">https://www.linkedin.com/in/marciojesus/</a>
+
+
+[//]: (https://www.rstudio.com/wp-content/uploads/2015/02/rmarkdown-cheatsheet.pdf)
+[//]: (https://rmarkdown.rstudio.com/authoring_basics.html)
+
+<br/>
+
+### INTRODUÇÃO
+
+<br/>
+Este estudo faz parte do curso de Análise de Dados da [Udacity](http://udacity.com) onde será utilizada a base de dados da empresa de [Prosper](https://www.prosper.com). A Prosper foi fundada em 2005 e foi a primeira plataforma de serviço de empréstimos ponto a ponto (peer-to_peer) dos Estados Unidos com mais de US $ 7 bilhões em empréstimos financiados. 
+
+Os mutuários (recebedores do empréstimo) solicitam empréstimos através da Prosper e os investidores (pessoas Físicas ou Jurídicas) podem financiar quantias entre US $ 1.000 a US $ 35.000. 
+
+Os mutuários fazem a solicitações de empréstimo, a Prosper verifica a identidade, seleciona dados pessoais e executa um algoritimo que analisa o risco de crédito e retorna a taxa a ser utilizada. Os investidores analisam o relatório de crédito do mutuário com a taxa de juros calculada pela Prosper e decidem se irão  ou não conceder o empréstimo. A Prosper lida com o serviço de coleta e distribui o pagamento de mutuários juntamente com os juros de volta aos investidores dos empréstimos, gerenciando todas as etapas do processo. A Prosper gera receita cobrando uma taxa sobre os empréstimos financiados.
+
+Obs.: Irei trabalhar com a lingua padrão da base de dados que é a lingua inglesa e adicionarei comentários em português.
+
+```{r setup, include=FALSE}
+library(ggplot2)
+library(GGally)
+library(reshape2)
+library(dplyr)
+library(knitr)
+library(gridExtra)
+
+knitr::opts_chunk$set(echo = FALSE, warnings=FALSE, warning=FALSE, messages=FALSE, results="hide")
+knit_hooks$set(optipng = hook_optipng)
+knit_hooks$set(pngquant = hook_pngquant)
+```
+
+
+
+```{r echo=FALSE}
+theme_set(theme_minimal(20))
+
+#sessionInfo()
+Sys.setlocale("LC_CTYPE", "Portuguese_Brazil.1252")
+#getOption("encoding")
+#Sys.getlocale("LC_ALL")
+l10n_info()
+(native <- ifelse(l10n_info()[[2]], "UTF-8", ifelse(l10n_info()[[3]], "latin1", "unknown")))
+
+
+#===
+#localeCategories <- c("LC_COLLATE","LC_CTYPE","LC_MONETARY","LC_NUMERIC","LC_TIME")
+#locales <- setNames(sapply(localeCategories, Sys.getlocale), localeCategories)
+#locales
+#sapply(names(locales), function(x) {Sys.setlocale(x, locales[[x]])})
+#l10n_info()
+#sapply(ISO88591, length)
+#df_temp <- read.csv('/home/marcio/Documentos/BigData/programas/Udacity/Projetos/P4_EDA/data/prosperLoanData.csv')
+df_temp <- read.csv('C:/BigData/Udacity/Projetos/P4_EDA - Analise Exploratoria de Dados/data/prosperLoanData.csv')
+```
+
+
+<br/>
+
+### INFORMAÇÕES DA BASE DE DADOS
+
+
+Temos um total 81 colunas ou variáveis e 113.937 observações (registros).
+```{r echo=FALSE}
+dim(df_temp)
+```
+
+Abaixo segue o nome de todas as colunas de nossa base:
+
+```{r echo=FALSE, results = TRUE}
+names(df_temp)
+```
+<br/>
+
+Dicionário de dados com maiores detalhes:
+<a href="https://docs.google.com/spreadsheets/d/1gDyi_L4UvIrLTEC6Wri5nbaMmkGmLQBk-Yx3z0XDEtI/edit#gid=0">https://docs.google.com/spreadsheets/d/1gDyi_L4UvIrLTEC6Wri5nbaMmkGmLQBk-Yx3z0XDEtI/edit#gid=0</a>
+
+
+<br/>
+
+```{r echo=FALSE}
+df <- df_temp[, c(
+      "Term",
+      "LoanStatus",
+      "BorrowerRate",
+      "ProsperScore",
+      "ListingCategory..numeric.",
+      "Occupation",
+      "EmploymentStatus",
+      "AvailableBankcardCredit",
+      "IncomeRange",
+      "IncomeVerifiable",
+      "StatedMonthlyIncome",
+      "LoanOriginalAmount",
+      "LoanOriginationDate",
+      "MonthlyLoanPayment"
+      )]
+```
+
+
+
+```{r echo=FALSE}
+dim(df)[2]
+```
+
+
+```{r echo=FALSE, results = FALSE}
+names(df)
+```
+
+
+```{r echo=FALSE}
+
+# A coluna ListingCategory contém as informaçoes dos códigos das categorias. Iremos realizar alguns procedimentos para inserir uma nova coluna chamada Category com a descriçao das categorias
+
+# Renomeando coluna 
+names(df)[5] <- "ListingCategory"
+
+# Transoformando a categoria em catactere (uso da lib dplyr)
+df <- df %>%
+  mutate(Category = as.factor(ListingCategory))
+
+# Transoformando a categoria em catactere
+df <- df %>%
+  mutate(LoanOriginationDate = as.Date(LoanOriginationDate, "%Y-%m-%d"))
+
+# Analise do conteúdo para posterior substituiçao
+levels(df$Category)
+
+# Substituiçao dos valore
+levels(df$Category)[1] <- "Not Available"        # Desconhecido 
+levels(df$Category)[2] <- "Debt"                 # Dívida
+levels(df$Category)[3] <- "Home Improvements"    # Melhorias domiciliares
+levels(df$Category)[4] <- "Business"             # Negócios
+levels(df$Category)[5] <- "Personal"             # Empréstimo Pessoal
+levels(df$Category)[6] <- "Student Use"          # Uso estudantil
+levels(df$Category)[7] <- "Auto"                 # Automóvel
+levels(df$Category)[8] <- "Other"                # Outros
+levels(df$Category)[9] <- "Baby & Adoption"      # Bebê e Adoçao
+levels(df$Category)[10] <- "Boat"                # Barco
+levels(df$Category)[11] <- "Cosmetic Procedure"  # Procedimentos cosméticos
+levels(df$Category)[12] <- "Engagement Ring"     # Anel de noivado
+levels(df$Category)[13] <- "Green Loans"         # Emprestimo verde
+levels(df$Category)[14] <- "Household Expenses"  # Despesas domiciliares
+levels(df$Category)[15] <- "Large Purchases"     # Compras grandes
+levels(df$Category)[16] <- "Medical / Dental"    # Médico / Odontológico
+levels(df$Category)[17] <- "Motorcycle"          # Motocicleta
+levels(df$Category)[18] <- "RV"                  
+levels(df$Category)[19] <- "Taxes"               # Impostos
+levels(df$Category)[20] <- "Vacation"            # Férias
+levels(df$Category)[21] <- "Wedding Loans"       # Empréstimo para Casamento  
+
+# Excluindo coluna ListingCategory
+df <- subset(df, select = -c(ListingCategory))
+
+# Conferência
+levels(df$Category)
+```
+
+
+```{r echo=FALSE}
+# Adicionando campos para trabalhar com Data
+df$LoanOriginationYear <- as.character(df$LoanOriginationDate, format="%Y")
+df$LoanOriginationMonth <- as.character(df$LoanOriginationDate, format="%m")
+df$LoanOriginationYearMonth <- as.character(df$LoanOriginationDate, format="%Y.%m")
+
+# Conferência
+table(df$LoanOriginationYear)
+table(df$LoanOriginationMonth)
+```
+
+
+
+
+
+```{r echo=FALSE, results = FALSE, warning=FALSE}
+# Faixa de Renda 
+
+#Analisando o conteúdo do campo que esta no nosso dataset, podemos ver que ele tem faixas de renda e no mesmo campo também contém situaçÃo de emprego (Not employed e Not #displayed)
+
+table(df$IncomeRange)
+```
+
+
+
+```{r echo=FALSE}
+# Irei criar um novo campo chamado IncomeRange2, que irá considerar as situações de emprego "Not displayed" e "Not employed" na faixa de renda 0. 
+#Ao invés de manter uma faixa de salario de 1 a 20000, irei segmentar esta faixa em duas. Uma faixa de sal?rio de US$ 1 a US$ 10.000 e outra de US$10.000 a US$ 20.000, pois analisando os dados acredito que esta segmentação irá possibilitar mais insights para o nosso estudo.
+
+# Excluindo o campo IncomeRange
+df <- subset(df, select = -c(IncomeRange))
+
+
+df$IncomeRange2  <- cut(df$StatedMonthlyIncome, breaks = c(0, 1, 10000, 25000, 50000, 75000, 100000, 2000000), 
+                        labels= c("$0", "$1 - 10,000", "$10,000 - 25,000", "$25,000 - 50,000","$50,000 - 75,000", "$75,000 - 100,000","100,000+"), include.lowest=T,dig.lab=10)
+```
+
+
+```{r echo=FALSE, displayed = FALSE}
+# Situaçao de Emprego - EmploymentStatus
+# Transformando casos onde não há classificação para "Not available"
+df$EmploymentStatus <- as.character(df$EmploymentStatus)
+
+df$EmploymentStatus[df$EmploymentStatus == ""] <- "Not available"
+
+df$EmploymentStatus <- as.factor(df$EmploymentStatus)
+
+levels(df$EmploymentStatus)
+```
+
+
+Analisando as colunas de nossa base de dados, encontrou-se duas variáveis com valores nulos. As quantidades estão indicadas abaixo (de um total de 113.932). Apesar disso, os valores nulos não irão  afetar a nossa Análise.
+
+```{r results=TRUE}
+res<-NULL
+
+tes<-function(x){
+  for (i in 1:ncol(x)){
+    isnull <- sum(is.na(x[,i]))
+    isnull <- as.data.frame(isnull)
+    #isnull$count <- length(x[,i]) 
+    isnull$variable <- colnames(x)[i]
+
+    res<-rbind(res,isnull)
+  }
+  return(res)
+}
+
+df_isna <- tes(df)
+df_isna <- subset(df_isna, isnull > 0)
+df_isna
+#print(subset(df_isna, isnull > 0))
+
+```
+
+
+
+
+
+```{r echo=FALSE}
+dim(df)
+```
+
+```{r echo=FALSE, results = FALSE}
+str(df)
+```
+
+  
+Conforme as instruções da Udacity, iremos selecionar entre 10 a 15 variáveis para este estudo. O processo de Análise das informações mais relevantes resultou no seguinte mapa mental contendo colunas já existentes, novas colunas que seráo criadas e a Taxa de Juros que esta destacada na cor verde, pois terá um papel importante em nossa Análise.
+
+![](docs/Mapa_Mental_Analise_Prosposcore.png)
+<br/>
+Portanto, foi seleciondo 13 colunas da nossa base de dados. E com base nestas informaçoes foram adcionados mais 4 variáveis.
+
+
+Segue uma tabela com todas as vaiáveis que iremos trabalhar:
+
+<br/>
+
+Variáveis          | Descrição
+------------------ | ------------------------------------------------------------------------------------------
+Term | O prazo do empréstimo expresso em meses.
+LoanStatus | O status atual do empréstimo: cancelado, carregado, concluído, atual, inadimplente, pagamento final em progresso, Vencido. O status Vencido será acompanhado por uma faixa de inadimplência.
+BorrowerRate | A taxa de juros do mutuário para este empréstimo.
+ProsperScore | Uma pontuação de risco personalizada construída usando dados históricos Prosper. A pontuação varia de 1-10, sendo 10 o melhor, ou menor pontuação de risco. Aplicável para empréstimos originados após julho de 2009.
+Occupation | A Ocupação selecionada pelo mutuário no momento em que eles criaram a listagem. 
+Category | 0 - Nao disponível, 1 - Dívida, 2 - Melhoria domiciliar, 3 - Negócios, 4 - Empréstimo pessoal, 5 - Uso do aluno, 6 - Auto, 7- Outro 8 - Bebê e Adopção, 9 - Barco, 10 - Procedimento Cosmético, 11 - Anel de Noivado, 12 - empréstimos Verdes, 13 - Despesas Domiciliares, 14 - Grandes Compras, 15 - Médico / Dental, 16 - Motocicleta, 17 - RV, 18 - Impostos, 19 - Férias, 20 - empréstimos de casamento
+EmploymentStatus | O status de emprego do mutuário no momento em que publicaram a listagem.
+AvailableBankcardCredit | O crédito total disponível via cartão bancário no momento em que o perfil de crédito foi puxado.
+IncomeVerifiable | O mutuário indicou que eles têm a documentação necessária para suportar sua renda.
+StatedMonthlyIncome | A renda mensal que o mutuário declarou no momento em que a lista foi criada.
+LoanOriginalAmount | O montante original do empréstimo.
+LoanOriginationDate | A data em que o empréstimo foi originado.
+MonthlyLoanPayment | O pagamento mensal programado do empréstimo.
+LoanOriginationYear | Ano da data em que o empréstimo foi originado.
+LoanOriginationMonth | Mês da data em que o empréstimo foi originado.
+LoanOriginationYearMonth | Ano e mês da data em que o empréstimo foi originado (separdo por ponto).
+IncomeRange | A faixa salarial do mutuário no momento em que a lista foi criada.
+<br/>
+
+
+### QUESTÕES A SEREM EXPLORADAS
+
+
+Com base nas variáveis selecionadas, seguem abaixo algumas perguntas que iremos tentar responder:
+
+1. Qual é o maior motivo para a realização de empréstimos?
+2. A taxa de juros sofre alguma variação de acordo com a finalidade (categoria) do empréstimo?
+3. Quem tem uma renda maior, paga uma parcela maior?
+4. Quem tem uma renda maior, faz empréstimos mais altos?
+5. Mutuários que estão desempregados tem taxa de juros maiores que as que estão empregadas? 
+6. Mutuários que estão empregados e que também comprovaram renda, tem juros menor que as que estão empregadas mas não comprovaram renda?
+7. Com base nas informações e histórico, a Prosper apura uma pontuação chamada ProsperScore para os mutuarios, onde quanto maior a pontuação, maior a chance de ser um bom pagador (Consequentemente menor risco para o investidor). Esse score realmente tem relação com uma maior ou menor taxa de juros?
+8. A renda da pessoa tem alguma influência sobre a taxa de juros utilizada no empréstimo? 
+
+
+
+
+
+
+
+
+
+<br/>
+
+
+
+### REALIZANDO A ANÁLISE
+
+[//]: (ANÁLISE GERAL)
+
+Primeiro vamos começar realizando uma Análise das distibuições para termos uma idéia geral da base de dados.
+
+
+<br/>
+
+```{r echo=FALSE, optipng = '-o7'}
+
+qplot(data = df, binwidth = 0.4, x = LoanOriginalAmount) + 
+  scale_x_log10() +
+  theme(text = element_text(size=15), 
+        plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("1. Log10 Valor do empréstimo") + 
+  labs(x = "Log10 do Valor do empréstimo", y = "Quantidade")
+
+```
+
+Usando a escala de log10 para o valor de empréstimo, não foi possivel identificar exatamente de qual distribuição se trata. Parece ser uma distribuição assimétrica negativa.
+
+
+<br/>
+<br/>
+
+```{r echo=FALSE, optipng = '-o7'}
+
+qplot(data = subset(df, df$StatedMonthlyIncome > 500 & df$StatedMonthlyIncome <= 50000 & !is.na(StatedMonthlyIncome)), x = StatedMonthlyIncome, binwidth = 0.06) + 
+  scale_x_log10() +
+  theme(text = element_text(size=15), 
+        plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("2. Log10 da Renda Mensal") + 
+  labs(x = "Log10 da Renda Mensal", y = "Quantidade")
+
+```
+
+A distribuição da renda mensal é uma distribuição normal, também gerada usando uma escala de log10.
+
+<br/>
+<br/>
+
+```{r echo=FALSE, warning=FALSE, fig.width = 8, fig.asp = .62, optipng = '-o7'}
+
+qplot(data = df, x = LoanStatus, fill = I("#66b3ff"), col = I("#333333")) + 
+  theme(axis.line = element_line(colour = "grey80"),
+        text = element_text(size = 12),
+        axis.text.x = element_text(angle = 60, hjust = 1)) + 
+  scale_y_continuous(breaks = seq(0, 60000, 10000)) + 
+  theme(plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("3. Distribuição de empréstimos \n por situaçÃo do empréstimo") + 
+  labs(y = "Quantidade", x = "Status do empréstimo")
+
+```
+
+Note acima que a maioria dos empréstimos estão em andamento (Current). Existem uma série de status de empréstimo indicando a quantidade de dias que estão vencidos.
+
+<br/>
+
+Tradução           | 
+------------------ | -------------
+Cancelled                    | Cancelado   
+Chargedoff                   | Cobrados fora
+Completed                    | Concluído
+Current                      | Em andamento
+Defaulted                    | Padronizados
+Final Payment In Progress    | Pagamento final em andamento
+Past Due (>120 days)         | Vencido (> 120 dias)
+Past Due (1-15 days)         | Vencido (1-15 dias)
+Past Due (16-30 days)        | Vencido (16 a 30 dias)
+Past Due (31-60 days)        | Vencido (31-60 dias)
+Past Due (61-90 days)        | Vencido (61-90 dias)
+Past Due (91-120 days)       | Vencido (91-120 dias)
+
+
+```{r echo=FALSE}
+table(df$LoanStatus)
+```
+
+
+> Iremos desconsidearr as observações com status do empréstimo igual a "Cancelled" (são apenas 5)
+
+```{r echo=FALSE}
+#Excluindo registros com Status Cancelled
+df <- subset(df, df$LoanStatus != "Cancelled")
+```
+
+
+
+
+
+
+<br/>
+<br/>
+
+
+```{r echo=FALSE, optipng = '-o7'}
+
+qplot(data=df, x = df$LoanOriginalAmount, binwidth = 2500, fill = I("#66b3ff"), col = I("#333333"))  +
+  scale_x_continuous(breaks = seq(0,35000,2500)) + 
+  theme(axis.line = element_line(colour = "grey80"),
+        text = element_text(size=12),
+        axis.text.x = element_text(angle = 60, hjust = 1),
+        plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("4. Distribuição de empréstimos por valor") + 
+  labs(y = "Quantidade", x = "Valor do empréstimo")
+  
+```
+
+A maioria dos mutuários realizam emprestimos aproximadamente entre US$ 5000 a US$ 7.000.
+
+<br/>
+
+As estatisticas abaixo indicam que a média de valor dos emprestimos é de US$ 8337 e que do total de empéstimos 75% de até US$ 12000.
+```{r echo=FALSE, results=TRUE}
+summary(df$LoanOriginalAmount)
+```
+
+<br/>
+<br/>
+
+
+
+```{r echo=FALSE, optipng = '-o7'}
+
+qplot(data = df, x = df$LoanOriginationMonth, fill = I("#66b3ff"), col = I("#333333")) + 
+  scale_y_continuous(breaks = seq(0, 12000, 1500)) + 
+  theme(plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("5. Distribuição de empréstimos por mês") + 
+  labs(y = "Quantidade", x = "Meses")
+
+```
+
+Note que os meses que tiveram maiores quantidades de empréstimos foram os meses do final e inicio do ano e também o mês de outubro. 
+
+<br/>
+<br/>
+
+
+```{r echo=FALSE, optipng = '-o7'}
+
+ggplot(data = df, aes(x = LoanOriginationMonth, y = LoanOriginalAmount)) +
+  geom_bar(stat = 'summary', fun.y = mean, fill = I("#66b3ff"), col = I("#333333"))  + 
+  theme(plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("6. Média do valor de empréstimos  por mês") + 
+  labs(y = "Média do valor", x = "Meses")
+  
+```
+
+Agora considerando a média de valores emprestados, os meses com maior média foram janeiro, fevereiro seguido de dezembro. 
+
+
+<br/>
+<br/>
+
+Analisando os valores de empréstimos por mês
+
+```{r echo=FALSE, optipng = '-o7'}
+
+qplot(df, x = df$LoanOriginationMonth, y = df$LoanOriginalAmount) +
+  geom_boxplot(fill="#e6ecff") + 
+  stat_summary(fun.y = mean, shape = 4, col = 'red', geom = 'point') + 
+  scale_y_continuous(breaks = seq(0, 35000, 5000)) +
+  theme(plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("7. Valor do empréstimo por mês") + 
+  labs(y = "Valor do empréstimo", x = "Meses")
+
+```
+
+Neste gráfico odemos ver a concentração dos empréstimos de acordo com os valores. O traço na horizontal no meio do retângulo indica a mediana. O "x" na cor vermelha indica a posição da média. Os pontos pretos indicam os outliers (exceções).
+
+
+<br/>
+<br/>
+
+
+```{r echo=FALSE, optipng = '-o7'}
+
+qplot(x = df$LoanOriginationYear, data=df, fill = I("#66b3ff"), col = I("#333333")) +
+  scale_y_continuous(breaks = seq(0,35000, 5000)) +
+  theme(plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("8. Distribuição de empréstimos por ano") + 
+  labs(y = "Quantidade de empréstimos", x = "Ano")
+
+```
+
+Nossa base de dados contém dados de 2005 até 2014. Notamos que em 2009 houve uma grande queda. Sabe-se que entre 2007 e 2008 houve uma crise financeira mundial. Talvez isto pode ter alguma relação com a diminuição dos empréstimos nestes anos.
+
+Após 2009 a quantidade de emprestimos tornou a crescer, no entnato, em 2014 o valor volta a cair. Podemos observar também uma pequena quantidade de empréstimos em 2005. Vamos analisar mais de perto esses dois anos: 
+
+
+<br/>
+
+
+**Quantidade de empréstimos realizados em 2005 e 2014 por mês:**
+```{r echo=FALSE, results=TRUE}
+
+df_year_month_group = group_by(df, LoanOriginationYearMonth)
+
+dfCountByYearMonth <- summarise(df_year_month_group,
+                                n = n())
+
+df_outlayer <- subset(dfCountByYearMonth, LoanOriginationYearMonth <= 2005.12 | LoanOriginationYearMonth >= 2014.01)  
+print(df_outlayer)
+
+```
+
+Veja que o ano de 2005 tiveram somente dois meses e a quantidade de emprestimos foram somente 22. Já para o ano de 2014, tivemos somente três meses registrados com emprestimos, mas apesar disso, 2014 tem uma contagem bastante alta, somando 12.172 emprestimos. Vamos continuar a análise.
+
+
+<br/>
+<br/>
+
+
+
+```{r echo=FALSE, optipng = '-o7'}
+
+ggplot(data = df, aes(x = LoanOriginationYear, y = LoanOriginalAmount)) +
+  geom_bar(stat = 'summary', fun.y = sum, fill = I("#66b3ff"), col = I("#333333")) +
+  theme(plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("9. Total de valor empestado por ano") + 
+  labs(y = "Valor total de empréstimos", x = "Ano")
+  
+```
+
+Apesar de 2014 ter somente três meses de empréstimos realizados, em valor ele já tem a mesma quantia que o ano inteiro de 2012. Isso indica que 2014 provavelmente será um ano com a maior número de emprestimos realizados.
+
+
+<br/>
+<br/>
+
+
+
+```{r echo=FALSE, optipng = '-o7'}
+
+ggplot(data = df, aes(x = LoanOriginationYear, y = LoanOriginalAmount)) +
+  geom_bar(stat = 'summary', fun.y = mean, fill = I("#66b3ff"), col = I("#333333")) +
+  theme(plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("10. Média de valores empestados por Ano") + 
+  labs(y = "Média de valor emprestado", x = "Ano")
+  
+```
+
+Aqui podemos cofirmar uma tendência. Em 2014 houve uma quantidade pequena de empréstimos em relação ao ano de 2013 conforme vimos no gráfico 8, no entanto, a média dos valores emprestados foi a mais alta já registrada. Há que considera ainda que em 2014 temos apenas três meses.
+
+
+<br/>
+<br/>
+
+
+```{r echo=FALSE, optipng = '-o7'}
+
+qplot(x  = df$LoanOriginationYear, y = df$LoanOriginalAmount) + 
+  geom_boxplot(fill = "#e6ecff") +
+  geom_boxplot(data=df[df$LoanOriginationYear == "2014",],
+                        aes(x = LoanOriginationYear, y = LoanOriginalAmount), fill = "#85e0e0") +
+  stat_summary(fun.y = mean,shape=4, col = 'red', geom = 'point') +
+  theme(plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("11. Empréstios por ano") + 
+  labs(y = "Valor de empréstimos", x = "Ano")
+  
+
+```
+
+O "x" vermelho indica a média do valor do empréstimo. O traço horizontal no meio do retângulo é a mediana.
+Aqui podemos ver informações estatésticas sobre Distribuição dos emprestimos ao longo dos anos. 
+Para a maioria dos anos a média de empréstimos vai até US$ 10.000. De 2010 em diante podemos notar um aumento crescente dos valores a cada ano. Em 2014 vêmos novamente a maior média de todos os anos.
+
+** Tentar mexer no visual, usar X ao invés de O
+
+<br/>
+
+No entanto temos que considerar que em 2014 há somente três meses. Para compararmos com os demais meses e sabermos se realmente pode ser uma tendência iremos calcular abaixo a média somente os três primeiros meses de cada ano:
+
+```{r echo=FALSE, results=TRUE, optipng = '-o7'}
+
+df_tree_months <- subset(df, df$LoanOriginationMonth >= "01" & df$LoanOriginationMonth <= "03")
+
+by(df_tree_months$LoanOriginalAmount, df_tree_months$LoanOriginationYear, mean)
+
+```
+
+Podemos ver que para o ano de 2014 realmente o valor médio está bem maior que os demais anos, ou seja, há uma grande possibilidade de 2014 ser o ano com maior valor de empréstimos de todos os tempos.
+
+
+<br/>
+<br/>
+
+
+```{r fig.width = 8, fig.asp = .62, optipng = '-o7'}
+
+qplot(data=df, x = df$MonthlyLoanPayment, binwidth=50, fill = I("#66b3ff"), col = I("#333333")) +
+  scale_x_continuous(breaks = seq(0,1200,150), limits = c(0, 1200)) +
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 50, hjust = 1)) +
+  theme(plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("12. Distribuição dos empréstimos \n por valor mensal pago") + 
+  labs(y = "Quantidade de emprestimos", x = "Valor")
+
+```
+
+A maioria das parcelas são de aproximadamente US$ 150. 
+
+
+<br/>
+<br/>
+
+
+```{r echo=FALSE, fig.width = 9, fig.asp = .62, optipng = '-o7'}
+df_occupation_group = group_by(df, Occupation)
+
+dfLoanByOccupation <- summarise(df_occupation_group,
+                                mean_loan = mean(LoanOriginalAmount),
+                                median_loan = median(LoanOriginalAmount),
+                                n = n())
+
+dfLoanByOccupation <- arrange(dfLoanByOccupation, desc(n))
+
+dfLoanByOccupation <- subset(dfLoanByOccupation, Occupation != "Other" & Occupation != "Professional")
+
+ggplot(data = dfLoanByOccupation[1:10,], aes(x = Occupation, y = n, colour = Occupation, fill = Occupation)) +
+  geom_bar(stat="identity", show.legend = F) +
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 50, hjust = 1)) +
+  theme(plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("12.1. Quantidade de empéstimos por Ocupação") + 
+  labs(y = "Quantidade", x = "Ocupação")
+  
+```
+
+As ocupações que tem o maior número de emprestimos são: Programadores de computador, Executivos e Professores.
+
+<br/>
+<br/>
+
+
+
+Abaixo estamos vendo ao contrário do que foi questionado anteriormente. 2005 foi o ano com a maior renda média de todos os anos.
+
+```{r echo=FALSE, optipng = '-o7'}
+df_year_group = group_by(df, LoanOriginationYear)
+
+dfIncomeByYear <- summarise(df_year_group,
+                            mean_income = mean(StatedMonthlyIncome),
+                            median_loanamount = median(StatedMonthlyIncome),
+                            n = n())
+
+dfIncomeByYear <- arrange(dfIncomeByYear, LoanOriginationYear)
+
+ggplot(aes(x = LoanOriginationYear, y = mean_income, group = 1), data = dfIncomeByYear) + 
+  geom_line(color = "blue") + 
+  geom_point() + 
+  scale_y_continuous(breaks=seq(0, 12000, 1000)) + 
+  theme(plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("13. Renda Média Mensal por Ano") + 
+  labs(y = "Renda Média por mes", x = "Ano")
+
+```
+
+Enquanto os demais anos a média tem uma variação aproximadamente entre US$ 4500 a US$ 6500, o ano de 2005 a média foi de aproximadamente US$ 11.000. Há que se considerar que para este ano existem poucos empréstimos. É comum que acontecer de qualquer valor acima do comum torna-se um outlayer influenciando a média.
+
+
+<br/>
+<br/>
+
+Vamos analisar a dispersão da renda ao longo dos anos:
+
+```{r fig.width = 8, fig.asp = .62, optipng = '-o7'}
+qplot(data = df, x = LoanOriginationYear, y = StatedMonthlyIncome) +
+  geom_point(color = 'blue') + 
+  scale_y_continuous(breaks = seq(0, 2000000, 250000)) +
+  theme(plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("14. Renda Mensal por Ano") + 
+  labs(y = "Valor da Renda Mensal", x = "Ano")
+```
+
+Podemos notar que em 2012 existe um outlayer. Analisando os detalhes, foi constatado que este mutuário tem a renda mensal de US$ 1750000, mas nao tem a renda comprovada.
+
+
+<br/>
+
+
+```{r echo=FALSE, results=FALSE}
+# Identificando o outlayer
+# não há nada de incomum com esmprétimo. A categoria do empréstimo é Bussiness, ou seja, para negcóios e o valor foi de US 4000.
+
+subset(df, df$StatedMonthlyIncome >= 1000000)
+```
+
+
+
+<br/>
+
+
+Vamos agora visualizar as informações retirando os outliers, ou seja, vamos filtrar somente os mutuários com renda mensal abaxo de US$ 50000.
+
+```{r echo=FALSE, optipng = '-o7'}
+# Analisando renda fora do outlayer (até 50000)
+
+qplot(data = df, x = LoanOriginationYear, y = StatedMonthlyIncome) +
+  geom_boxplot(fill = "#e6ecff") + 
+  geom_boxplot(data=df[df$LoanOriginationYear == "2005",],
+                        aes(x = LoanOriginationYear, y = StatedMonthlyIncome), fill = "#85e0e0") +
+  stat_summary(fun.y = mean, shape = 4, col = 'red', geom = 'point') +
+  scale_y_continuous(limits = c(0,50000)) + 
+  theme(plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("15. Renda Média Mensal  por Ano") + 
+  labs(y = "Valor da Renda Mensal", x = "Ano")
+```
+
+Realmente no ano de 2005 (destacado na cor verde), foi o ano com menor montante de valores emprestados (conforme vimos no gráfico 7), mas também foi um ano onde os mutuários  tiveram a maior renda.
+
+
+<br/>
+<br/>
+
+Vamos retirar o ano de 2005 para melhor visualizarmos a evolução da média de renda por ano:
+
+```{r echo=FALSE, optipng = '-o7'}
+df_year_group = group_by(subset(df, df$LoanOriginationYear != "2005"), LoanOriginationYear)
+
+dfIncomeByYear <- summarise(df_year_group,
+                      mean_income = mean(StatedMonthlyIncome),
+                      median_loanamount = median(StatedMonthlyIncome),
+                      n = n())
+
+dfIncomeByYear <- arrange(dfIncomeByYear, LoanOriginationYear)
+
+ggplot(aes(x = LoanOriginationYear, y = mean_income, group = 1), data = dfIncomeByYear) + 
+  geom_line(color = "blue") + 
+  geom_point() + 
+  scale_y_continuous(breaks=seq(0, 7000, 500)) + 
+  theme(plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("16. Renda Média Mensal por Ano") + 
+  labs(y = "Renda média mensal", x = "Ano")
+
+
+```
+
+Entre o anos de 2006 a 2008, houve uma ligeira queda. De 2009 em diante, a renda vem aumentando a cada ano. 
+
+
+<br/>
+<br/>
+
+
+
+
+[//]: (RENDA)
+
+
+
+```{r echo=FALSE, optipng = '-o7'}
+
+ggplot(aes(x = df$StatedMonthlyIncome), data = df) + 
+  geom_histogram(binwidth = 1000, fill = I("#66b3ff"), col = I("#333333")) +
+  scale_x_continuous(limits = c(0, 20000), breaks = seq(0, 20000, 1000)) +
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  theme(plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("17. Distribuição da Renda") + 
+  labs(y = "Quantidade", x = "Valor da Renda")
+
+
+```
+
+A maioria dos mutuários tem uma renda entre US$ 3000 a US$ 5000 mensais.
+
+Obs.: Foi utilizado um limite para diminuir a calda do gráfico onde esta sendo exibidas somente as rendas mensais de até US$ 20.000.
+
+<br/>
+<br/>
+
+
+```{r echo=FALSE, optipng = '-o7'}
+
+ggplot(aes(x = df$IncomeRange2), data = df) + 
+  geom_histogram(stat = "count", fill = I("#66b3ff"), col = I("#333333")) +
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  theme(plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("17.1. Distribuiçao por faixa de renda") + 
+  labs(y = "Quantidade", x = "Faixa da Renda")
+
+
+```
+
+Como verificado no gráfico anterior (17) a maior concentração de renda está entre US$ 3000 e 5000, é obvio que o gráfico acima apresentará ocorrência maior na faixa de renda de US$ 1 a 10000.
+
+<br/>
+<br/>
+
+
+
+
+```{r fig.width = 10, fig.asp = .75, optipng = '-o7'}
+
+ggplot(aes(x = Category, y = LoanOriginalAmount, colour = Category, fill = Category), data = df) + 
+  geom_bar(stat = 'summary', fun.y = mean, show.legend = F) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  theme(plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("18. Valor médio do empréstimo \n por Categoria") + 
+  labs(y = "Valor médio do empréstimo", x = "Categoria")
+
+```
+
+Respondendo à pergunta número 1, neste gráfico é possível identificar que em em média o maior motivo para a realização do empréstimo são para pagamento de dividas. Seguido de Bebê e Adoção, Negócios e Empréstimos para Casamento.
+
+
+
+
+<br/>
+<br/>
+
+
+
+```{r fig.width = 13, fig.asp = .66, optipng = '-o7'}
+
+ggplot(aes(x = df$Category, y = df$LoanOriginalAmount),
+       data = df) +
+  geom_jitter(aes(color = df$IncomeRange2), size=0.9, alpha = .7
+              ) +
+  theme(text = element_text(size=15), 
+        axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_color_brewer(palette = "Set3") + # Set3, Accent, Pastel1, Spectral, Dark2
+  scale_y_continuous(breaks = seq(0, 35000, 5000)) + 
+  theme(plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("19. Valor do empréstimo por Categoria \n e Faixa de Renda") + 
+  labs(y = "Valor médio do empréstimo", x = "Categoria", color = "Faixa de Renda")
+
+```
+
+O gráfico acima deixa claro que o perfil mais comum de renda de quem realiza empréstimos são mutuários com faixas de renda entre $ 1 a 25000 e os valores dos emprestimos em geral vão somente até US$ 250000 onde a categoria mais utilizada é a para pagamento de dívidas (debt)
+A faixa de renda com maior quantidade de emprestimos com valor acima de US 25000 é de 10.000 a 25.000, e bastante utilizado para pagamento de dívidas (debt).
+As categorias com maiores concentrações de empréstimos são: Dívidas (debt), Outros (Others), Melhorias domiciliares (Home Improvements), Negócios (Business) e não disponível (Not available).
+
+
+<br/>
+<br/>
+
+
+Segue um gráfico de violino com a Distribuição do valor por quantidade de parcelas
+```{r fig.width = 9, fig.asp = .62, optipng = '-o7'}
+
+ggplot(df, aes(x=Term, y = LoanOriginalAmount)) + 
+  geom_violin(trim=FALSE, fill = '#A4A4A4', color = "darkred", size = .8) + 
+  stat_summary(fun.y=mean, geom="point", shape=4, size=1.5, color = "990000") +
+  facet_wrap(~df$Term)+
+  scale_x_continuous(breaks = c(12, 36, 60)) + 
+  scale_y_continuous(breaks = seq(0, 35000, 5000)) +
+  theme(text = element_text(size=15),
+        plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("20. Valor do empréstimo por \nQuantidade de Parcelas") + 
+  labs(y = "Valor empréstimo", x = "Quantidade de Parcelas")
+
+```
+
+Podemos identificar algumas informações da relação entre o valor do empréstimo e em quantas parcelas eles geralmente são realizados.
+Note que a maior concentração de empréstimos para 12 parcelas são com valor de até US$ 5000. Para parcelamento em 36 meses, a maioria dos emrpéstimos são de até 10000, com um pequeno pico em 15000.
+Já para os empréstimos para pagamento em 60 meses, os valores são maiores. Podemos notar que os maiores picos estão em 10000 e 15000.
+
+Em resumo a maioria dos parcelamento realizados em 12 vezes são de valores até US$ 5000, provavelmente para não gerar um empréstimo com valor alto de parcela. Valores baixos a intermediários, são parcelados em 36 vezes. Já para valores médios ou altos, geralmente são parcelados em 60 vezes. 
+
+
+<br/>
+<br/>
+
+
+
+
+
+[//]: (JUROS)
+
+
+```{r echo=FALSE, optipng = '-o7'}
+
+ggplot(data = df, aes(x = Term, y = BorrowerRate)) + 
+  stat_summary(fun.y = mean, shape = 1, col = 'red', geom = 'bar', color = '#990000', fill = "#990000") +
+  scale_y_continuous(breaks = seq(0, .5, 0.01)) + 
+  scale_x_continuous(breaks = c(12, 36, 60)) + 
+  theme(text = element_text(size = 15),
+        plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("21. Taxa média de Juros por Quantidade de Parcelas") + 
+  labs(y = "Taxa média de Juros", x = "Quantidade de Parcelas") 
+
+```
+
+A taxa de juros para quem faz o emprestimo em 12 parcelas é bem menor.
+
+
+<br/>
+<br/>
+
+
+
+```{r echo=FALSE, warning=FALSE, fig.width = 8, fig.asp = .62, optipng = '-o7'}
+
+ggplot(aes(x = df$Term, y = df$LoanOriginalAmount), data = df) +
+  geom_jitter(aes(color = df$IncomeRange2), size = 0.9, alpha = .7) +
+  theme(text = element_text(size = 15), 
+        axis.text.x = element_text()) +
+  scale_color_brewer(palette="Set3") +
+  scale_y_continuous(breaks = seq(0, 35000, 5000)) +
+  scale_x_continuous(breaks = c(12, 36, 60)) + 
+  theme(plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("22. Valores de empréstimos por Quantidade \nde Parcelas e Faixa de Renda") + 
+  labs(y = "Valor do empréstimo", x = "Quantidade de Parcelas", color = "Faixa de Renda")
+
+
+```
+
+A quantidade de empréstimos para pagamento em 12 meses é bem menor que para 36 e 60 meses. Em todos os casos é nítido que empréstimos com valores maiores, em geral são mais realizados por quem tem a renda mais maior (para empréstimos com pagamento em 12 parcelas - ver ocorrências acima de 15000 e para 36 e 60 meses ver ocorrências acima de 25000).
+
+Vamos aprofundar e verificar a média de valor de empéstimos por faixa de renda:
+```{r }
+by(df$LoanOriginalAmount, df$IncomeRange2, mean)
+```
+Considerando que a maioria dos mutuários tem renda entre US$ 1 e 10000, a resposta para a pergunta 4 é sim. Em geral, quem tem maior renda, realiza empréstimos de maior valor.
+
+<br/>
+<br/>
+
+
+
+```{r echo = FALSE, warning=FALSE, optipng = '-o7'}
+
+qplot(x = Term, data = df) + 
+  geom_bar(, fill = I("#66b3ff"), col = I("#333333")) +
+  scale_x_continuous(breaks = c(12, 36, 60)) + 
+  theme(text = element_text(size = 15),
+        plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("23. Distribuição dos empréstimos \npor Quantidade de Parcelas") + 
+  labs(y = "Quantidade \n de empréstimos", x = "Quantidade de Parcelas")
+
+```
+
+Apensar da opção de parcelamento em 12 vezes ser a opção com a menor taxa de juros, a maioria dos mutuários optam pelo pagamento em 36 meses. Isso se deve provavelmente ao valor da parcela.
+
+<br/>
+<br/>
+
+Vamos analisar a média de valor por número de parcelas:
+
+```{r echo=FALSE, results = TRUE}
+by(df$MonthlyLoanPayment, df$Term, mean)
+```
+
+Realmente, o menor valor médio de parcelas são para parcelamentos até 36 vezes. E  média do valor mensal para empréstimos de 12 vezes é bem maior que para as demais formas de parcelamento. 
+
+
+<br/>
+<br/>
+
+
+VALOR médio MENSAL DA PARCELA POR FAIXA DE SALÀRIO
+```{r fig.width = 8, fig.asp = .62, optipng = '-o7'}
+
+# desconsiderar a faixa com renda zero
+df_income_group = group_by(subset(df, df$IncomeRange2 != "$0"), IncomeRange2)
+
+dfByIncomeLoan <- summarise(df_income_group,
+                      mean_monthly_loan = mean(MonthlyLoanPayment),
+                      n = n())
+
+dfByIncomeLoan <- arrange(dfByIncomeLoan, IncomeRange2)
+
+ggplot(aes(y = format(dfByIncomeLoan$mean_monthly_loan, scientific = F), x = IncomeRange2, group = 1), data = dfByIncomeLoan) + 
+  geom_bar(stat = "identity", color = '#339933', fill = "#66cc66") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  theme(text = element_text(size = 16), 
+        plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("24. Valor médio da parcela por Faixa de Renda") + 
+  labs(y = "Valor médio da parcela", x = "Faixa de Renda")
+
+```
+
+A faixa de renda que paga o maior valor de parcela é de US$ 75 a 100000, seguido da faixa de US$ 25000 a 50000.
+
+Considerando que o maior número de empréstimos são de mutuários com rendas entre 1 a 10000, podemos responder que sim para a pergunta número 3.
+
+Levando em conta que a maior parte dos empréstimos são realizadas por mutuários com faixa de renda entre 1 a 10000 (conforme gráfico 17.1) e esta faixa de renda tem o valor médio da parcela de aproximadamente  US$ 260 conforme o gráfico acima, confirmamos então o que o comentário do gráfico 23 apresenta, onde o parcelamento em 36 vezes é o mais utilizado com uma parcela média aproximada justamente de US$ 260.
+
+
+
+<br/>
+<br/>
+
+
+
+```{r fig.width = 11, fig.asp = .64, optipng = '-o7'}
+
+ggplot(aes(x = Category, y = BorrowerRate, colour = Category, fill = Category), data = df) + 
+  geom_bar(stat = 'summary', fun.y = mean, show.legend = F) +
+   theme_bw() +  
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_y_continuous(breaks = seq(0, .25, 0.01)) +
+  theme(plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("25. Média de Juros \npor Categoria") + 
+  labs(y = "Média de Juros", x = "Categoria")
+
+
+```
+
+Respondendo a segunda pergunta sim, a taxa de juros também sofre variações de acordo com a categoria do empréstimo. A categorias com maior taxa de juros foi de Procedimentos cosméticos, seguido de Despesas com a Familia e Outros. Já as categorias com menor taxa foram: Barco, Pessoal e a categoria Não disponível.
+
+
+<br/>
+MÉDIA DA TAXA DE JUROS POR CATEGORIA
+
+Vamos ver a variação da taxa de juros ao longo dos anos:
+
+```{r echo=FALSE, optipng = '-o7'}
+
+ggplot(aes(x = df$LoanOriginationYear, y = df$BorrowerRate, group = 1), data = df) +
+  geom_line(stat = 'summary', fun.y = mean, size = .8, color = "#990000") +
+  theme(axis.text.x = element_text(size = 12)) +
+  theme(axis.text.y = element_text(size = 14)) +
+  scale_y_continuous(breaks = seq(.05, .3, .01)) + 
+  theme(text = element_text(size = 16), 
+        plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("26. Média de Juros por Ano") + 
+  labs(y = "Média de Juros", x = "Ano")
+
+```
+
+A taxa de juros iniciou em 2005 baixissima, no entanto foram realizados somente 22 empréstimos neste ano. A partir de 2006 houveram grandes aumentos até chegar em 2011, onde se deu inicio de quedas sucessivas da taxa de juros até chegar em 2014 onde iniciou com o juros bem mais baixo com relação aos demais anos. 
+
+
+
+<br/>
+<br/>
+
+Vamos analisar a taxa de juros conforme a renda do mutuário:
+
+```{r results=FALSE, echo = FALSE, warning=FALSE, fig.width = 7, fig.asp = .62, optipng = '-o7'}
+
+df_income_range_group = group_by(df, IncomeRange2)
+
+dfByIncomeRange <- summarise(df_income_range_group,
+                             mean_rate = mean(BorrowerRate),
+                             n = n())
+
+dfByIncomeRange <- arrange(dfByIncomeRange, mean_rate)
+
+ggplot(aes(y = mean_rate,  x = IncomeRange2), data = dfByIncomeRange) + 
+  geom_point(size = 4, color = "white", shape = 23, fill = '#990000') + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12)) +
+  theme(axis.text.y = element_text(size = 14)) +
+  scale_y_continuous(breaks = seq(.1, .3, .01)) + 
+  theme(text = element_text(size = 14), 
+        plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("27. Média de Juros por Faixa de Renda") + 
+  labs(y = "Média de Juros", x = "Faixa de Renda")
+
+```
+
+Podemos ver que quem não tem renda, paga em média a maior taxa de juros. Quem tem a renda entre US$ 1 a 10000, paga uma taxa de juros intermediária, com média entre 0,195%. As faixas que vão de 10000 a 100000 pagam as menores taxas de juros. Algo que ainda não foi possível explicar foi o fato de que a taxa de juros para quem tem renda acima de $ 100000 é uma das mais altas.
+
+Analisando as informações acima, podmeos responder que sim para a pergunta 8, em geral, mutuários com maior renda tem juros mais baixos.
+
+
+<br/>
+<br/>
+
+
+```{r echo=FALSE, results=FALSE, optipng = '-o7'}
+
+df_year_income_range_group = group_by(df, LoanOriginationYear, IncomeRange2)
+
+dfByYearIncomeRange <- summarise(df_year_income_range_group,
+                                 mean_rate = mean(BorrowerRate),
+                                 n = n())
+
+dfByYearIncomeRange <- arrange(dfByYearIncomeRange, LoanOriginationYear, IncomeRange2)
+
+
+
+g28 <- ggplot(aes(x = LoanOriginationYear, y = mean_rate,  color = IncomeRange2, group = IncomeRange2), data = dfByYearIncomeRange) + 
+  geom_line(size = .3) +
+  geom_point(size = 2) + 
+  theme(text = element_text(size = 18), 
+        plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  theme(axis.text.x = element_text(angle = 50, hjust = 1)) + 
+  ggtitle("28. Média de Juros por Ano \ne Faixa de Renda") + 
+  labs(y = "Média de Juros", x = "Ano", color = "Faixa de Renda")
+
+
+df_yearincome_group = group_by(df, LoanOriginationYear, IncomeRange2)
+
+dfByYearIncomeLoan <- summarise(df_yearincome_group,
+                                mean_loan = mean(LoanOriginalAmount),
+                                n = n())
+
+dfByYearIncomeLoan <- arrange(dfByYearIncomeLoan, LoanOriginationYear, IncomeRange2)
+
+g29 <- ggplot(aes(x = LoanOriginationYear, y = mean_loan, color = IncomeRange2, group = IncomeRange2),
+   data = dfByYearIncomeLoan) + 
+  geom_line(size = .2) + 
+  geom_point(size = 2) + 
+  theme(axis.text.x = element_text(angle = 50, hjust = 1)) + 
+  theme(text = element_text(size = 18), 
+        plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("29. Média do Valor Emprestado por Ano \ne Faixa de Renda") + 
+  labs(y = "Média valor emprestado", x = "Ano", color = "Faixa de Renda")
+
+```
+
+MÉDIA DE JUROS E DE VALOR DE EMPRESTIMOS POR FAIXA DE RENDA AO LONGO DOS ANOS
+
+Nos gráficos abaixo podemos analisar o comportamento tanto da média da taxa de juros quanto a média do valor emprestado por faixa de renda. Talve até identificar pontos de um que reflete no outro. Segue: 
+
+```{r fig.width = 11, fig.asp = .72, optipng = '-o7'}
+grid.arrange(g28, g29, ncol=1)
+```
+
+Para analisar os gráficos acima, é necessário investigar caso a caso. Vamos ver algumas descobertas:
+
+28. Média de Juros por Ano e Faixa de Renda
+As faixas que vão de US$ 1 a 25000 tem uma evolução estável.
++ Dá pra ver que quem tem zero renda (linha em vermelho), teve as maiores taxas de juros na maioria dos anos. 
++ A faixa de renda entre US$ 1 a 10.000 também ficou entre as maiores, é onde estão concentradas a maior quantidade de empréstimos.
++ Quem tem salário acima de US$ 100.000 até o ano de 2010 teve uma taxa de juros baixissima. No entanto, ela aumentou muito tornando-se uma das maiores de 2011 em diante.	
++ Analisar as outras três em separado.	
++ As faixas de US$ 25000 a 50000 e acima de 100000 foram as faixas com maior variação de juros entre os anos.
+
+29. Média do Valor Emprestado por Ano e Faixa de Renda
+A idéia era tentar achar relação de aumento ou diminuição de empréstimos com aumento ou diminuição da taxa de juros.
++ Para a faixa de 75 a 1000 houve um grande aumento de empréstimos a partir de 2012 onde a taxa de juros caiu bastante (ver gráfico anterior)
++ 2010 apesar de ser o ano com menor taxa de juros para quem tem renda acima de US$ 100000, foi um ano com pouquíssimos emprestimos para essa faixa de renda.
+(continuar)
++ Renda na faixa de US$ 50000 a 75000 (linha azul) tende a realizar mais empréstimos sempre que a taxa de juros cai.
++ A partir de 2011 conforme vimos no gráfico 26, a taxa de juros começou a cair a cada ano. Podemos ver isso no gráfico 28 e o reflexo do aumento de valores empréstados a partir deste ano.
+
+
+<br/>
+<br/>
+
+```{r fig.width = 8, fig.asp = .62, optipng = '-o7'}
+
+ggplot(aes(x = df$EmploymentStatus, y = df$BorrowerRate, group = 1), data = df) +
+  geom_line(stat = 'summary', fun.y = mean, color = '#990000', size = 1) +
+  geom_point(stat = 'summary', fun.y = mean, color = 'black', size = 2) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1, size = 13)) +
+  scale_y_continuous(breaks=seq(0, 1, 0.01)) + 
+  theme(text = element_text(size = 16), 
+        plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("30. Taxa média de Juros \npor Situação de Emprego") + 
+  labs(y = "Média de juros", x = "Situação de Emprego")
+  
+```
+Respondendo a pergunta 5 sim, mutuários que estão dempregados tem uma taxa de juros bem maior do que os que estão empregados. 
+
+
+
+
+
+<br/>
+<br/>
+
+
+```{r fig.width = 8, fig.asp = .62, optipng = '-o7'}
+
+df_income1 <- subset(df, df$StatedMonthlyIncome > 0)
+
+df_income_verif_group = group_by(subset(df, df$StatedMonthlyIncome > 0), IncomeVerifiable)
+
+dfByIncomeVerifiable <- summarise(df_income_verif_group,
+                                  mean_rate = mean(BorrowerRate),
+                                  n = n())
+
+dfByIncomeVerifiable <- arrange(dfByIncomeVerifiable, mean_rate)
+
+
+ggplot(aes(x = IncomeVerifiable, y = mean_rate, group = 1),
+   data = dfByIncomeVerifiable)  + 
+  geom_point(shape = 23, size = 4, fill = '#990000', color='darkred') + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  scale_y_continuous(breaks = seq(0, 0.22, 0.01), limits = c(0.19, .22)) + 
+  theme(text = element_text(size = 14), 
+        plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("31. Taxa média de Juros por \nRenda Verificada") + 
+  labs(y = "Média de juros", x = "Renda Verificada \n(False = não, True = Sim)")
+
+```
+
+A resposta para a pergunta 6 também é afirmativa, mutuários que estão empregados e comprovam sua renda tem juros menores do que as que não comprovam a renda. Vale ressaltar que os mutuários que não comprovaram renda ainda tem uma taxa de juros média menor do que quem tem a situação de emprego como "Não Empregado" (Not employed).
+
+<br/>
+
+
+### ANÁLISE DA CORRELAÇÃO
+
+<br/>
+
+Range coeficiênte | Força da correlação
+---------------|----------------------
+ 0,2 < r < 0,4 | Correlação fraca
+ 0,4 < r < 0,7 | Correlação moderada
+ 0,7 < r < 0,9 | Correlação forte
+*Onde r = coeficiênte de correlação linear*
+
+
+Vamos calcular o coeficiênte de correlação usando o método de Pearson para encontrar a correlação entre o PropScore e a Taxa de Juros:
+
+> Para análise do PropScore, iremos considerar somente as observações onde esta variável é diferente de nulo.
+
+```{r echo=FALSE, results=TRUE}
+df_score <- subset(df, !is.na(df$ProsperScore))
+
+cor.test(df_score$ProsperScore, df_score$BorrowerRate)
+```
+
+
+```{r echo=FALSE, optipng = '-o7'}
+
+ggplot(aes(y = BorrowerRate, x = ProsperScore), data = df_score) +
+  geom_jitter(alpha = 1/5, fill = I("#ffcc00"), color = I("#191970")) + 
+  geom_smooth(colour = "red", fill = "lightgreen", method = 'lm') + 
+  theme(text = element_text(size = 15), 
+        plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  scale_x_continuous(breaks = seq(0, 11, 1)) +
+  ggtitle("32. Correlação entre a Taxa de Juros e o PropScore") + 
+  labs(y = "Taxa de Juros")
+
+```
+
+Como vimos, o coeficiênte encontrado foi -0,64. Podemos observar que existe uma correlaçao fraca, conforme a referência informada na tabela. Significa que a Taxa de Juros tem uma  correlação fraca com com o Propscore. A taxa de juros provavelmente é influenciado também por outras variáveis, como por exemplo a quantidade de percelas, etc.
+
+
+Existem outras variáveis que provavelmente tem uma correlação entre si. Ao invés de realizarmos suposições, vamos gerar uma matriz de correlação para facilitar nossa Análise. 
+
+<br/>
+<br/>
+
+**33. MATRIZ DE CORrelação**
+
+Vamos agora selecionar somente alguns campos da nossa base:
+
+> Obs.: Para possibiitar a geração da matriz de correlação é utilizada uma amostra da nossa base de dados. Significa que pode gerar pequenas diferenças de resultados se comparado com o cálculo da base toda.
+
+```{r echo=FALSE, results='hide', message=FALSE, warning=FALSE, optipng = '-o7'}
+# Para a criação desta matriz, iremos usar amostra dos dados.
+set.seed(1836)
+
+df_sample <- subset(df, select = c(-Term, -Occupation, -LoanOriginationYearMonth, -Category, -LoanOriginationMonth, -LoanOriginationDate, -LoanStatus, -LoanOriginationYear))
+
+g <- ggpairs(df_sample[sample.int(nrow(df_sample), 5000),], 
+             #axisLabels="internal", # Infelizmente a fonte fica muito grande com eixo diagonal
+  lower = list(
+    continuous = wrap("smooth", alpha = 0.3, color = "blue") 
+    ),
+  upper = list(continuous = wrap(ggally_cor, size = 2, color = "black")))
+
+g <- g + theme(
+    axis.text = element_text(size = 8, color = "white"),
+    axis.text.y = element_text(size = 5),
+    axis.text.x = element_text(size = 7, angle = 90, vjust = 1),
+    axis.title.x = element_text(size = 2),
+    legend.background = element_rect(fill = "white"),
+    panel.grid.major = element_line(colour = NA, size = 4),
+    panel.grid.minor = element_blank(),
+    panel.background = element_rect(fill = "grey95")
+  )
+
+# Após gerada a imagem, não há necessidade de gerar novamente. 
+# Descomentar as linhas abaixo caso queira gerar o gráfico novamente.
+#g + theme_grey(base_size = 8)
+#save("docs/matrix_loan_new_reduce.png", device = "png")
+
+```
+
+![](docs/matrix_loan_new_reduce.png)
+
+> A análise deste gráfico é encontrando a intercessão entre a coluna (ver a variável no título da coluna) e a linha (ultima informação ao lado direito da linha). O ponto onde eles se encontram irá mostrar as informações de correlação. Por exemplo, o título da segunda posição PropScore, se relaciona com a linha 1 que é o BorrowRate (Taxa de Juros). Onde os dois se cruzam esta sendo exibido o valor -0.653, o que quer dizer que quando o propscore aumenta a taxa de juros tende a cair. Para analisarmos o gráfico desta mesma correlação, basta inverter a análise. Procure agora primeiro a informação BorrowRate como coluna e depois a informação Propscore como linha. Você verá o gráfico desta correlação. 
+<br/>
+
+Algumas correlações identificadas são óbvias, e por isso não poderemos considerá-las, como por exemplo o valor mensal a ser pago com o valor total emprestado. Esta relação quase sempre estará relacinoada. Neste caso, o coeficiente de correlação foi bastante alto: 0,93.
+
+<br/>
+<br/>
+
+Vamos analisar a correlação entre o Propscore e o Valor emprestado. 
+
+```{r echo=FALSE, optipng = '-o7'}
+
+ggplot(aes(x = ProsperScore, y = LoanOriginalAmount), data = df_score) +
+  geom_jitter(alpha=1/5, color = "#191970") +
+  geom_smooth(method = "lm", size = 1.3, color = "red") + 
+  theme(text = element_text(size = 15), 
+        plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("34. Correlação entre Valor do Empréstimo e PropScore") + 
+  labs(y = "Valor do empréstimo", x = "PropScore") + 
+  scale_y_continuous(breaks = seq(0, 35000, 5000)) +
+  scale_x_continuous(breaks = seq(0, 11, 1))
+
+
+```
+
+Apesar de haver uma tendência como pode-se ver os valores mais altos a partir do PropScore 7, a correlação identifica é considerada fraca.
+
+<br/>
+<br/>
+
+
+Será que quanto maior o valor, menor é a taxa de juros?
+
+A matriz de correlação indica uma correlação de -0.319 entre a Taxa de Juros e o Valor do empréstimo. Vamos ver o gráfico:
+
+
+```{r echo=FALSE, optipng = '-o7'}
+
+ggplot(aes(x = df$LoanOriginalAmount, y = df$BorrowerRate), data = df) +
+  geom_jitter(alpha=1/5, color = "#191970") +
+  geom_smooth(method = "lm", size = 1.3, color = 'red') + 
+  theme(text = element_text(size = 15), 
+        plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  scale_x_continuous(breaks = seq(0, 35000, 5000)) +
+  ggtitle("35. Correlação entre Taxa de Juros e Valor do Empréstimo") + 
+  labs(x = "Valor do empréstimo", y = "Taxa de Juros")
+
+```
+
+Também é uma correlação fraca.
+
+
+<br/>
+<br/>
+
+
+```{r echo=FALSE, results=FALSE}
+cor.test(df$BorrowerRate, df$AvailableBankcardCredit)
+```
+<br/>
+<br/>
+
+Devido à grande diverença entre os valores disponíveis, tive que usar a funão sqrt para calcularmos a raiz quadrada do valor disponível do cartão de credito e assim deixar o gráfico melhor para visualização:
+
+```{r fig.width = 8, fig.asp = .67, optipng = '-o7'}
+
+ggplot(aes(y = df$BorrowerRate, x = sqrt(df$AvailableBankcardCredit)), data = df) +
+  geom_jitter(alpha = 1/5, color = "#191970") +
+  geom_smooth(method = "lm", color = "red", se = FALSE) +
+  scale_y_continuous(limits = c(0, 0.5)) + 
+  theme(text = element_text(size = 15), 
+        plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("36. Correlação entre Taxa de Juros e crédito disponível no Cartão de crédito") + 
+  labs(x = "Raiz quadrada - Valor de crédito \ndisponível cartão de crédito", y = "Taxa de Juros")
+
+```
+
+Podemos ver no gráfico uma ligeira tendência que indica que quanto maior o valor disponível no cartão de crédito, menor é a taxa de juros. O coeficiênte de correlação neste caso foi -0.357. 
+
+<br/>
+<br/>
+
+
+### GRÁFICOS FINAIS E RESUMO
+
+```{r echo=FALSE, fig.width = 11, fig.asp = .45, optipng = '-o7'}
+
+g10 <- ggplot(data = df, aes(x = LoanOriginationYear, y = LoanOriginalAmount)) +
+  geom_bar(stat = 'summary', fun.y = mean, fill = I("#66b3ff"), col = I("#333333")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 13)) + 
+  theme(text = element_text(size = 13), 
+        plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("10. Média de valores empestados por Ano") + 
+  labs(y = "Média de valor emprestado", x = "Ano")
+  
+g26 <- ggplot(aes(x = df$LoanOriginationYear, y = df$BorrowerRate, group = 1), data = df) +
+  geom_line(stat = 'summary', fun.y = mean, size = .8, color = "#990000") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 13)) + 
+  theme(axis.text.y = element_text(size = 13)) +
+  scale_y_continuous(breaks = seq(.05, .3, .01)) + 
+  theme(text = element_text(size=13), 
+        plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("26. Média de Juros por Ano") + 
+  labs(y = "Média de Juros", x = "Ano")
+
+grid.arrange(g10, g26, ncol=2)
+
+```
+
+As análises mostram uma tendência que indica que em 2014 será o ano com maior valor de empréstimo de todos os anos. O gráfico de média de juros, indica uma queda ascentuada da taxa de juros a partir do ano de 2012. Com exceção de 2005, onde foi um ano atípico, o ano de 2014 até agora é o ano com menor taxa de juros. 
+
+
+Sabe-se que a taxa de juros está intimamente ligada ao risco. Quanto maior o risco do investidor em não receber o pagamento pelo empréstimo, maior será a taxa de juros. 
+
+Os gráficos abaixo indicam fatores que podem apresentar risco:
+
+```{r echo=FALSE, fig.width = 12, fig.asp = .45, optipng = '-o7'}
+
+df_income_range_group = group_by(df, IncomeRange2)
+
+dfByIncomeRange <- summarise(df_income_range_group,
+                             mean_rate = mean(BorrowerRate),
+                             n = n())
+
+dfByIncomeRange <- arrange(dfByIncomeRange, mean_rate)
+
+g27 <- ggplot(aes(y = mean_rate,  x = IncomeRange2), data = dfByIncomeRange) + 
+  geom_point(size = 4, color = "white", shape = 23, fill = '#990000') + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12)) +
+  theme(axis.text.y = element_text(size = 12)) +
+  scale_y_continuous(breaks = seq(.1, .3, .01)) + 
+  theme(text = element_text(size = 14), 
+        plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("27. Média de Juros por Faixa de Renda") + 
+  labs(y = "Média de Juros", x = "Faixa de Renda")
+
+  
+g30 <- ggplot(aes(x = df$EmploymentStatus, y = df$BorrowerRate, group = 1), data = df) +
+  geom_line(stat = 'summary', fun.y = mean, color = '#990000', size = 1) +
+  geom_point(stat = 'summary', fun.y = mean, color = 'black', size = 2) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1, size = 13)) +
+  scale_y_continuous(breaks=seq(0, 1, 0.01)) + 
+  theme(text = element_text(size = 16), 
+        plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("30. Taxa média de Juros \npor Situação de Emprego") + 
+  labs(y = "Média de juros", x = "Situação de Emprego")
+
+
+grid.arrange(g30, g27, ncol=2)
+
+```
+
+Segue abaixo algumas descobertas do estudo:
+* Quem esta desempregado, tem a taxa de juros muito maior do que quem está empregado.
+* Vale ressaltar que dos mutuários que estão empregados, os que comprovaram sua renda tem juros muito menores do que os que não comprovaram.
+* Em geral, quem tem maior renda paga menos juros para o empréstimo (Com exceção de quem ganha acima de US$ 100.000. Para estes casos, uma hipótese que poderia justificar o alto * percentual de juros talvez possa ser a de que o mutuário não administra bem os seus recursos).
+
+<br/>
+
+```{r fig.width = 13, fig.asp = .66, optipng = '-o7'}
+
+ggplot(aes(x = df$Category, y = df$LoanOriginalAmount),
+       data = df) +
+  geom_jitter(aes(color = df$IncomeRange2), size=0.9, alpha = .7
+              ) +
+  theme(text = element_text(size=15), 
+        axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_color_brewer(palette = "Set3") + # Set3, Accent, Pastel1, Spectral, Dark2
+  scale_y_continuous(breaks = seq(0, 35000, 5000)) + 
+  theme(plot.title = element_text(family = "Helvetica", face = "bold", size = (15), hjust = 0.5)) +
+  ggtitle("19. Valor do empréstimo por Categoria \n e Faixa de Renda") + 
+  labs(y = "Valor médio do empréstimo", x = "Categoria", color = "Faixa de Renda")
+
+```
+
+Podemos visualizar a dispersão dos empréstimos visualizando os valores separados por categoria e faixa de renda. Fica claro que maior quantidade de empréstimos é realizada por mutuários com renda entre US$ 1 a 10000. Para empéstimos com valor a partir de US$ 25000, essa faixa quase não tem empéstimos. Provavelmente não são aprovados valores tão altos para esta faixa de renda.
+Acima de 25000 é mais comum empréstimos para quem tem renda entre US$ 10000 a 25000.
+
+<br/>
+<br/>
+
+### REFLEXÃO
+
+
+Esse estudo foi realizado analisando uma série de informações da base de dados, procurando conhecer as informações e uma maneira geral e direcionando o estudo para responder perguntas sobre a taxa de juros aplicada nos diferentes empréstimos.
+
+Apesar de termos analisado uma série de variáveis, pode-se dizer que para o cálculo da taxa de juros é considerado não só um fator, e sim uma série de fatores. Alguns influenciam mais, outros nem tanto. O PropScore é o índice que mais teve influência com no percentual de juros utilizado no empréstimo. Ele provavelmente é calculado considerando uma série de características, como por exemplo o fato da pessoa estar trabalhando ou não, sua faixa de renda, se a renda foi ou não foi comprovada, etc. Outro fator importante é a quantidade de parcelas para pagamento do empréstimo. Em 12 vezes, o juros aplicado é bem menor do que parcelamentos em 36 e 60 meses.
+
+Esta é uma base de dados bastante rica, e que possibilita uma série de insights. A maior dificuldade na realização deste estudo foi em meio a 81 variáveis identificar as com maior relevância. Apesar de haver um dicionário de dados, a forma exata de como cada variável funciona muitas vezes não está clara. A criação do mapa mental ajudou bastante nesse processo de eliminação de variáveis que não faziam tanto sentido, me ajudou a focar no objetivo e a identificar mais questões a serem respondidas. A partir daí, pouco a pouco fui me familiarizando com os comandos do R e a medida que eu fui avançando, mais insights foram acontecendo.
+
+Um próximo passo para esse estudo seria analisar as características dos empréstimos que estão inadimplentes. Identificar os diferentes padrões destes com relação aos empréstimos com pagamento em dia. Para realizar esta identificação, poderia também serem utilizadas técnicas de machine learning, como por exemplo classificação ou clusterização.
+Uma outra sugestão seria analisar as demais variáveis da base de dados disponíveis na base de dados juntamente com informações mais atualizadas, contendo dados de anos mais atuais (considerando que o ultimo ano que temos é o de 2014).
+
+Apesar do propósito deste projeto ter sido cumprido, tenho certeza que com mais tempo e mais prática, poderia criar gráficos mais sofisticados, realizando a junção de visões facilitando ainda mais a compreensão e prosseguindo com a identificação de novas descobertas.
+
+<br/>
+
+Até o próximo projeto!
+
+
+<br/>
+<br/>
+<br/>
+
+#### REFERÊNCIAS:
+
+* Prosper
+  + https://www.prosper.com/
+  + https://en.wikipedia.org/wiki/Prosper_Marketplace
+  
+* Otimização do tamanho das imagens
+  + http://optipng.sourceforge.net/
+  + https://www.zevross.com/blog/2017/06/19/tips-and-tricks-for-working-with-images-and-figures-in-r-markdown-documents/
+  + https://www.linuxhelp.com/install-jpegoptim-optipng-linux/
+  
+* Coeficiente de correlação
+  + http://w3.ufsm.br/adriano/aulas/coreg/Aula%2001%20Correla%E7ao%20Linear.pdf
+  
+* Formatação R Markdown
+ + https://www.rstudio.com/wp-content/uploads/2015/02/rmarkdown-cheatsheet.pdf
+ 
+* Visualização
+  + http://r-statistics.co/Top50-Ggplot2-Visualizations-MasterList-R-Code.html
+  + https://stackoverflow.com/questions/39709745/decreasing-the-line-thickness-and-corr-font-size-in-ggpairs-plot
+  + https://github.com/ggobi/ggally/issues/6
+  
+
+<br/>
+<br/>
+<br/>
