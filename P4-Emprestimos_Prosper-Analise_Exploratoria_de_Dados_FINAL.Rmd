@@ -35,7 +35,7 @@ LinkedIn: <a href="https://www.linkedin.com/in/marciojesus/">https://www.linkedi
 
 <br/>
 
-Este estudo faz parte do curso de Análise de Dados da [Udacity](http://udacity.com) onde será utilizada a base de dados da empresa de [Prosper](https://www.prosper.com). A Prosper foi fundada em 2005 e foi a primeira plataforma de serviço de empréstimos ponto a ponto (peer-to_peer) dos Estados Unidos com mais de US $ 7 bilhões em empréstimos financiados. 
+Este estudo faz parte do curso de Análise de Dados da [Udacity](http://udacity.com) onde será utilizada a base de dados da empresa de [Prosper](https://www.prosper.com). A Prosper foi fundada em 2005 e foi a primeira plataforma de serviço de empréstimos ponto a ponto (peer-to-peer) dos Estados Unidos com mais de US $ 7 bilhões em empréstimos financiados. 
 
 Os mutuários (recebedores do empréstimo) solicitam empréstimos através da Prosper e os investidores (pessoas Físicas ou Jurídicas) podem financiar quantias entre US $ 1.000 a US $ 35.000. 
 
@@ -67,7 +67,7 @@ knit_hooks$set(pngquant = hook_pngquant)
 
 theme_set(theme_minimal(20))
 
-# Definições de idioma para uso de ascentuação
+# Definições de idioma para uso de acentuação
 Sys.setlocale("LC_CTYPE", "Portuguese_Brazil.1252")
 l10n_info()
 (native <- ifelse(l10n_info()[[2]], "UTF-8", ifelse(l10n_info()[[3]], "latin1", "unknown")))
@@ -145,7 +145,7 @@ names(df)
 
 ```{r echo=FALSE}
 
-# A coluna ListingCategory contém as informaçoes dos códigos das categorias. Iremos realizar alguns procedimentos para inserir uma nova coluna chamada Category com a descriçao das categorias
+# A coluna ListingCategory contém as informações dos códigos das categorias. Iremos realizar alguns procedimentos para inserir uma nova coluna chamada Category com a descriçao das categorias
 
 # Renomeando coluna 
 names(df)[5] <- "ListingCategory"
@@ -284,11 +284,11 @@ str(df)
 ```
 
   
-Conforme as instruções da Udacity, iremos selecionar entre 10 a 15 variáveis para este estudo. O processo de Análise das informações mais relevantes resultou no seguinte mapa mental contendo colunas já existentes, novas colunas que seráo criadas e a Taxa de Juros que esta destacada na cor verde, pois terá um papel importante em nossa Análise.
+Conforme as instruções da Udacity, iremos selecionar entre 10 a 15 variáveis para este estudo. O processo de Análise das informações mais relevantes resultou no seguinte mapa mental contendo colunas já existentes, novas colunas que serão criadas e a Taxa de Juros que esta destacada na cor verde, pois terá um papel importante em nossa Análise.
 
 ![](docs/Mapa_Mental_Analise_Prosposcore.png)
 <br/>
-Portanto, foi seleciondo 13 colunas da nossa base de dados. E com base nestas informaçoes foram adcionados mais 4 variáveis.
+Portanto, foi selecionado 13 colunas da nossa base de dados. E com base nestas informações foram adicionados mais 4 variáveis.
 
 
 Segue uma tabela com todas as vaiáveis que iremos trabalhar:
@@ -351,7 +351,7 @@ Com base nas variáveis selecionadas, seguem abaixo algumas perguntas que iremos 
 
 <br/>
 
-Primeiro vamos começar realizando uma Análise das distibuições para termos uma idéia geral da base de dados.
+Primeiro vamos começar realizando uma Análise das distribuições para termos uma ideia geral da base de dados.
 
 <br/>
 
@@ -367,7 +367,7 @@ qplot(data = df, x = LoanOriginalAmount, binwidth = 1500) +
 
 ```
 
-Como podemos ver a distribuição esta com concentração de valores aproximadamente de 1000 a 5000 e depois tem picos a cada 5000, que indica os valores mais comun de empréstimos. 
+Como podemos ver a distribuição esta com concentração de valores aproximadamente de 1000 a 5000 e depois tem picos a cada 5000, que indica os valores mais comum de empréstimos. 
 
 <br/>
 
@@ -584,8 +584,8 @@ df_year_month_group = group_by(df, LoanOriginationYearMonth)
 dfCountByYearMonth <- summarise(df_year_month_group,
                                 n = n())
 
-df_outlayer <- subset(dfCountByYearMonth, LoanOriginationYearMonth >= 2014.01)  
-print(df_outlayer)
+df_outlier <- subset(dfCountByYearMonth, LoanOriginationYearMonth >= 2014.01)  
+print(df_outlier)
 
 ```
 
@@ -629,7 +629,7 @@ ggplot(data = df, aes(x = LoanOriginationYear, y = LoanOriginalAmount)) +
   
 ```
 
-Aqui podemos cofirmar uma tendência. Em 2014 houve uma quantidade pequena de empréstimos em relação ao ano de 2013 conforme vimos no gráfico 8, no entanto, a média dos valores emprestados foi a mais alta já registrada. Há que considera ainda que em 2014 temos apenas três meses.
+Aqui podemos confirmar uma tendência. Em 2014 houve uma quantidade pequena de empréstimos em relação ao ano de 2013 conforme vimos no gráfico 8, no entanto, a média dos valores emprestados foi a mais alta já registrada. Há que considera ainda que em 2014 temos apenas três meses.
 
 
 <br/>
@@ -651,8 +651,8 @@ qplot(x  = df$LoanOriginationYear, y = df$LoanOriginalAmount) +
 
 ```
 
-Aqui podemos ver informações estatísticas sobre Distribuição dos emprestimos ao longo dos anos. 
-Para a maioria dos anos a média de empréstimos vai até US$ 10.000. De 2010 em diante podemos notar um aumento crescente dos valores a cada ano. Em 2014 vêmos novamente a maior média de todos os anos.
+Aqui podemos ver informações estatísticas sobre Distribuição dos empréstimos ao longo dos anos. 
+Para a maioria dos anos a média de empréstimos vai até US$ 10.000. De 2010 em diante podemos notar um aumento crescente dos valores a cada ano. Em 2014 vemos novamente a maior média de todos os anos.
 
 
 <br/>
@@ -728,8 +728,8 @@ ggplot(data = dfLoanByOccupation[0:10,], aes(x = reorder(Occupation, -n), y = n,
 
 ```
 
-As cinco ocupações que tem o maior número de emprestimos são: Programadores de computador, Executivos e Professores, Asistentes Administrativos e Analistas.
-Obs.: Foram desconsideros os casos onde a ocupação é igual a Outros (Others) ou Profissional (Professional)
+As cinco ocupações que tem o maior número de emprestimos são: Programadores de computador, Executivos e Professores, Assistentes Administrativos e Analistas.
+Obs.: Foram desconsiderados os casos onde a ocupação é igual a Outros (Others) ou Profissional (Professional)
 
 <br/>
 <br/>
@@ -739,7 +739,6 @@ Obs.: Foram desconsideros os casos onde a ocupação é igual a Outros (Others) ou 
 
 <br/>
 
-Abaixo estamos vendo ao contrário do que foi questionado anteriormente. 2005 foi o ano com a maior renda média de todos os anos.
 
 ```{r echo=FALSE, optipng = '-o7'}
 
@@ -765,7 +764,7 @@ ggplot(aes(x = LoanOriginationYear, y = mean_income, group = 1),
 
 ```
 
-Enquanto os demais anos a média tem uma variação aproximadamente entre US$ 4500 a US$ 6500, o ano de 2005 a média foi de aproximadamente US$ 11.000. Há que se considerar que para este ano existem poucos empréstimos. É comum que acontecer de qualquer valor acima do comum torna-se um outlayer influenciando a média.
+Podemos ver que durante esses 9 anos, a renda média teve variação entre  US$ 4500 a US$ 6500. 
 
 
 <br/>
@@ -783,14 +782,14 @@ qplot(data = df, x = LoanOriginationYear, y = StatedMonthlyIncome) +
   labs(y = "Valor da Renda Mensal", x = "Ano")
 ```
 
-Podemos notar que em 2012 existe um outlayer. Analisando os detalhes, foi constatado que este mutuário tem a renda mensal de US$ 1750000, mas nao tem a renda comprovada.
+Podemos notar que em 2012 existe um outlier. Analisando os detalhes, foi constatado que este mutuário tem a renda mensal de US$ 1750000, mas nao tem a renda comprovada.
 
 
 <br/>
 
 
 ```{r echo=FALSE, results=FALSE}
-# Identificando o outlayer
+# Identificando o outlier
 # Não há nada de incomum com esmprétimo. A categoria do empréstimo é Bussiness, ou seja, para negócios e o valor foi de US 4000.
 
 subset(df, df$StatedMonthlyIncome >= 1000000)
@@ -804,14 +803,14 @@ subset(df, df$StatedMonthlyIncome >= 1000000)
 Vamos agora visualizar as informações retirando os outliers, ou seja, vamos filtrar somente os mutuários com renda mensal abaxo de US$ 7500.
 
 ```{r echo=FALSE, optipng = '-o7'}
-# Analisando renda fora do outlayer (até 7500)
+# Analisando renda fora do outlier (até 7500)
 
 qplot(data = df, x = LoanOriginationYear, y = StatedMonthlyIncome) +
   geom_boxplot(fill = "#e6ecff") + 
   geom_boxplot(data=df[df$LoanOriginationYear == "2005",],
                         aes(x = LoanOriginationYear, y = StatedMonthlyIncome), 
                fill = "#85e0e0") +
-  stat_summary(fun.y = mean, shape = 4, col = 'red', geom = 'point') +
+  #stat_summary(fun.y = mean, shape = 4, col = 'red', geom = 'point') +
   scale_y_continuous(limits = c(0,7500), breaks=seq(0, 7500, 500)) + 
   theme(plot.title = element_text(family = "Helvetica", face = "bold", 
                                   size = (15), hjust = 0.5)) +
@@ -962,7 +961,7 @@ ggplot(aes(x = df$Category, y = df$LoanOriginalAmount),
 
 Podemos visualizar a dispersão dos empréstimos visualizando os valores separados por categoria e faixa de renda. Fica claro que maior quantidade de empréstimos é realizada por mutuários com renda entre US$ 1 a 10000. Para empéstimos com valor a partir de US$ 25000, essa faixa quase não tem empéstimos. Provavelmente não são aprovados valores tão altos para esta faixa de renda.
 Acima de 25000 é mais comum empréstimos para quem tem renda entre US$ 10000 a 25000.
-A maairia dos empréstimos são utilizados para pagamento de dívidas (debt)
+A maioria dos empréstimos são utilizados para pagamento de dívidas (debt)
 As categorias com maiores concentrações de empréstimos são: Dívidas (debt), Outros (Others), Melhorias domiciliares (Home Improvements), Negócios (Business) e não disponível (Not available).
 
 
@@ -1311,7 +1310,8 @@ df %>%
 
 
 ```
-Respondendo a pergunta 5 sim, mutuários que estão dempregados tem uma taxa de juros bem maior do que os que estão empregados. 
+
+Respondendo a pergunta 5 sim, mutuários que estão desempregados tem uma taxa de juros bem maior do que os que estão empregados. 
 
 
 
@@ -1361,15 +1361,15 @@ A resposta para a pergunta 6 também é afirmativa, mutuários que estão empregados
 
 <br/>
 
-Range coeficiênte | Força da correlação
+Range coeficiente | Força da correlação
 ---------------|----------------------
  0,2 < r < 0,4 | Correlação fraca
  0,4 < r < 0,7 | Correlação moderada
  0,7 < r < 0,9 | Correlação forte
-*Onde r = coeficiênte de correlação linear*
+*Onde r = coeficiente de correlação linear*
 
 
-Vamos calcular o coeficiênte de correlação usando o método de Pearson para encontrar a correlação entre o PropScore e a Taxa de Juros:
+Vamos calcular o coeficiente de correlação usando o método de Pearson para encontrar a correlação entre o PropScore e a Taxa de Juros:
 
 > Para análise do PropScore, iremos considerar somente as observações onde esta variável é diferente de nulo.
 
@@ -1394,7 +1394,7 @@ ggplot(aes(y = BorrowerRate, x = ProsperScore), data = df_score) +
 
 ```
 
-Como vimos, o coeficiênte encontrado foi -0,64. Podemos observar que existe uma correlaçao fraca, conforme a referência informada na tabela. Significa que a Taxa de Juros tem uma  correlação fraca com com o Propscore. A taxa de juros provavelmente é influenciado também por outras variáveis, como por exemplo a quantidade de percelas, etc.
+Como vimos, o coeficiente encontrado foi -0,64. Podemos observar que existe uma correlação fraca, conforme a referência informada na tabela. Significa que a Taxa de Juros tem uma  correlação fraca com com o Propscore. A taxa de juros provavelmente é influenciado também por outras variáveis, como por exemplo a quantidade de parcelas, etc.
 
 
 Existem outras variáveis que provavelmente tem uma correlação entre si. Ao invés de realizarmos suposições, vamos gerar uma matriz de correlação para facilitar nossa Análise. 
@@ -1448,7 +1448,7 @@ g <- g + theme(
 > A análise deste gráfico é encontrando a intercessão entre a coluna (ver a variável no título da coluna) e a linha (ultima informação ao lado direito da linha). O ponto onde eles se encontram irá mostrar as informações de correlação. Por exemplo, o título da segunda posição PropScore, se relaciona com a linha 1 que é o BorrowRate (Taxa de Juros). Onde os dois se cruzam esta sendo exibido o valor -0.653, o que quer dizer que quando o propscore aumenta a taxa de juros tende a cair. Para analisarmos o gráfico desta mesma correlação, basta inverter a análise. Procure agora primeiro a informação BorrowRate como coluna e depois a informação Propscore como linha. Você verá o gráfico desta correlação. 
 <br/>
 
-Algumas correlações identificadas são óbvias, e por isso não poderemos considerá-las, como por exemplo o valor mensal a ser pago com o valor total emprestado. Esta relação quase sempre estará relacinoada. Neste caso, o coeficiente de correlação foi bastante alto: 0,93.
+Algumas correlações identificadas são óbvias, e por isso não poderemos considerá-las, como por exemplo o valor mensal a ser pago com o valor total emprestado. Esta relação quase sempre estará relacinonada. Neste caso, o coeficiente de correlação foi bastante alto: 0,93.
 
 <br/>
 <br/>
@@ -1509,7 +1509,7 @@ cor.test(df$BorrowerRate, df$AvailableBankcardCredit)
 <br/>
 <br/>
 
-Devido à grande diverença entre os valores disponíveis, tive que usar a funão sqrt para calcularmos a raiz quadrada do valor disponível do cartão de credito e assim deixar o gráfico melhor para visualização:
+Devido à grande diferença entre os valores disponíveis, tive que usar a função sqrt para calcularmos a raiz quadrada do valor disponível do cartão de credito e assim visualizarmos o gráfico com maior facilidade:
 
 ```{r fig.width = 8, fig.asp = .67, optipng = '-o7'}
 
@@ -1526,7 +1526,7 @@ ggplot(aes(y = df$BorrowerRate, x = sqrt(df$AvailableBankcardCredit)),
 
 ```
 
-Podemos ver no gráfico uma ligeira tendência que indica que quanto maior o valor disponível no cartão de crédito, menor é a taxa de juros. O coeficiênte de correlação neste caso foi -0.357. 
+Podemos ver no gráfico uma ligeira tendência que indica que quanto maior o valor disponível no cartão de crédito, menor é a taxa de juros. O coeficiente de correlação neste caso foi -0.357. 
 
 <br/>
 <br/>
@@ -1566,10 +1566,9 @@ grid.arrange(g10, g26, ncol=2)
 
 ```
 
-As análises mostram uma tendência que indica que em 2014 será o ano com maior valor de empréstimo de todos os anos. O gráfico de média de juros, indica uma queda ascentuada da taxa de juros a partir do ano de 2012. Com exceção de 2005, onde foi um ano atípico, o ano de 2014 até agora é o ano com menor taxa de juros. 
+As análises mostram uma tendência que indica que em 2014 será o ano com maior valor de empréstimo de todos os anos. O gráfico de média de juros, indica uma queda acentuada da taxa de juros a partir do ano de 2012. O ano de 2014 até agora é o ano com menor taxa de juros.
 
-
-Sabe-se que a taxa de juros está intimamente ligada ao risco. Quanto maior o risco do investidor em não receber o pagamento pelo empréstimo, maior será a taxa de juros. 
+Sabe-se que a taxa de juros está intimamente ligada ao risco. Quanto maior o risco do investidor em não receber o pagamento pelo empréstimo, maior será a taxa de juros.
 
 <br/>
 
